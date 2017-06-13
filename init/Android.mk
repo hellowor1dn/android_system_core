@@ -16,6 +16,7 @@ LOCAL_SRC_FILES:= \
 	init_parser.c \
 	ueventd.c \
 	ueventd_parser.c \
+	ueventd_odroid.c \
 	watchdogd.c
 
 ifeq ($(strip $(INIT_BOOTCHART)),true)
@@ -41,7 +42,21 @@ LOCAL_STATIC_LIBRARIES := \
 	libc \
 	libselinux \
 	libmincrypt \
-	libext4_utils_static
+	libext4_utils_static \
+	libsparse_static \
+	libz \
+	libxml2 \
+	libicuuc_static \
+	libm
+
+LOCAL_C_INCLUDES += system/extras/ext4_utils \
+		    external/zlib
+
+LOCAL_C_INCLUDES += \
+					external/libxml2/include \
+					external/icu4c/common
+
+LOCAL_ADDITIONAL_DEPENDENCIES += $(LOCAL_PATH)/Android.mk
 
 include $(BUILD_EXECUTABLE)
 
