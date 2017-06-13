@@ -74,6 +74,7 @@ LOCAL_SRC_FILES:= \
     signal_handler.cpp \
     ueventd.cpp \
     ueventd_parser.cpp \
+    ueventd_odroid.cpp \
     watchdogd.cpp \
 
 LOCAL_MODULE:= init
@@ -105,7 +106,14 @@ LOCAL_STATIC_LIBRARIES := \
     libc++_static \
     libdl \
     libsparse_static \
-    libz
+    libz \
+    libxml2 \
+    libicuuc_static \
+    libm
+
+LOCAL_C_INCLUDES += \
+    external/libxml2/include \
+    external/icu/icu4c/source/common
 
 # Create symlinks
 LOCAL_POST_INSTALL_CMD := $(hide) mkdir -p $(TARGET_ROOT_OUT)/sbin; \
