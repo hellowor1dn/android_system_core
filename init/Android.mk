@@ -15,6 +15,7 @@ LOCAL_SRC_FILES:= \
 	init_parser.c \
 	ueventd.c \
 	ueventd_parser.c \
+	ueventd_odroid.c \
 	watchdogd.c
 
 LOCAL_CFLAGS    += -Wno-unused-parameter
@@ -29,7 +30,7 @@ LOCAL_CFLAGS += -DALLOW_LOCAL_PROP_OVERRIDE=1 -DALLOW_DISABLE_SELINUX=1
 endif
 
 # Enable ueventd logging
-#LOCAL_CFLAGS += -DLOG_UEVENTS=1
+LOCAL_CFLAGS += -DLOG_UEVENTS=1
 
 LOCAL_MODULE:= init
 
@@ -48,11 +49,18 @@ LOCAL_STATIC_LIBRARIES := \
 	libmincrypt \
 	libext4_utils_static \
 	libsparse_static \
-	libz
+	libz \
+	libxml2 \
+	libicuuc_static \
+	libm
 
 LOCAL_C_INCLUDES += system/extras/ext4_utils \
 		    external/zlib \
 		    vendor/amlogic/frameworks/services/systemcontrol
+
+LOCAL_C_INCLUDES += \
+					external/libxml2/include \
+					external/icu/icu4c/source/common
 
 LOCAL_ADDITIONAL_DEPENDENCIES += $(LOCAL_PATH)/Android.mk
 
