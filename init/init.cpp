@@ -74,7 +74,7 @@ struct selabel_handle *sehandle_prop;
 static int property_triggers_enabled = 0;
 
 static char bootmode[32] = "unknow";
-static char hardware[32] = "rk30board";
+static char hardware[32] = "odroidn1";
 static char qemu[32];
 
 int have_console;
@@ -445,7 +445,7 @@ static void symlink_fstab() {
     char fstab_default_path[50] = "/fstab.";
     int ret = -1;
 
-    //such as: fstab.rk30board.bootmode.unknown
+    //such as: fstab.odroidn1.bootmode.unknown
     strcat(fstab_path, hardware);
     strcat(fstab_path, ".bootmode.");
     strcat(fstab_path, bootmode);
