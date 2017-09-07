@@ -524,6 +524,11 @@ int fs_mgr_mount_all(struct fstab *fstab, int mount_mode)
             continue;
         }
 
+        /* Skip misc partition. It just for bootmessage on ODROID */
+        if (!strcmp(fstab->recs[i].mount_point, "/misc")) {
+            continue;
+        }
+
         /* Translate LABEL= file system labels into block devices */
         if (!strcmp(fstab->recs[i].fs_type, "ext2") ||
             !strcmp(fstab->recs[i].fs_type, "ext3") ||
