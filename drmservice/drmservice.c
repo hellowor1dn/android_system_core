@@ -406,7 +406,7 @@ int rknand_sys_storage_test_hid(void)
 
 
 
-int rk3399_vendor_storage_read_sn(void)
+int vendor_storage_read_sn(void)
 {
     uint32 i;
 	int ret ;
@@ -416,7 +416,7 @@ int rk3399_vendor_storage_read_sn(void)
 	int sys_fd = open("/dev/vendor_storage",O_RDWR,0);
 	if(sys_fd < 0){
 		SLOGE("vendor_storage open fail\n");		
-		return -1;
+		goto try_drmboot;
 	}
 	
 	req.tag = VENDOR_REQ_TAG;
@@ -428,7 +428,7 @@ int rk3399_vendor_storage_read_sn(void)
 	/* return req->len is the real data length stored in the NV-storage */	
 	if(ret){
 		SLOGE("vendor read error\n");			
-		return -1;
+		goto try_drmboot;
 	}
     //get the sn length
     len = req.len;
@@ -436,13 +436,18 @@ int rk3399_vendor_storage_read_sn(void)
     {
 	len =30;
     }
-    if(len < 0)
+    if(len <= 0)
     {
-	len =0;
+	goto try_drmboot;
     }	
     memcpy(sn_buf_idb,req.data,len);
-	SLOGE("vendor read sn_buf_idb:%s\n",sn_buf_idb);
+    SLOGE("vendor read sn_buf_idb:%s\n",sn_buf_idb);
     //property_set("sys.serialno",sn_buf_idb);   
+    return 0;
+
+try_drmboot:
+    SLOGE("----vendor read sn error,try drmboot----");
+    rknand_sys_storage_test_sn(); 
     return 0;
 }
 /*
@@ -490,7 +495,7 @@ void read_region_tag()
 	}
 }
 
-static int insmod(const char *filename)
+int insmod(const char *filename)
 {
 	void *module = NULL;
 	unsigned int size;
@@ -1024,6 +1029,7 @@ void copy_dir(const char *old_path,const char *new_path)
 		SLOGE("opendir %s fail\n",old_path);
 		return;
 	}
+	mkdir("/data/media/0",0755);//in case /data/media/0 not created
 	char *root_dir_abs_path = get_abs_path("/data/media/0",new_path);
 	SLOGE("--root_dir_abs_path =%s--\n",root_dir_abs_path);
 	if(mkdir(root_dir_abs_path,0777)==-1)
@@ -1054,12 +1060,14 @@ void copy_dir(const char *old_path,const char *new_path)
 		SLOGE("--file abs path =%s\n",file_abs_path);
 		copy_file(dirp->d_name,file_abs_path);
 		chmod(file_abs_path,S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP|S_IWGRP|S_IXGRP|S_IROTH|S_IXOTH);
+		//chown(file_abs_path,1023,1023);//if want to deleteable,open this
 		free(file_abs_path);
 	}
 
 	closedir(dir);
 	change_path(p);
 	chmod(root_dir_abs_path,S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP|S_IWGRP|S_IXGRP|S_IROTH|S_IXOTH);
+	//chown(root_dir_abs_path,1023,1023);//if want to deleteable,open this
 	free(root_dir_abs_path);
 }
 
@@ -1088,12 +1096,7 @@ int main( int argc, char *argv[] )
 
 	if(SERIALNO_FROM_IDB)//read serialno form idb
 	{
-		if(!strcmp(prop_board_platform,"rk3399") || !strcmp(prop_board_platform,"rk3328") ||
-                   !strcmp(prop_board_platform,"rk3288")) {
-			rk3399_vendor_storage_read_sn();
-		}else {
-			rknand_sys_storage_test_sn();
-		}
+		vendor_storage_read_sn();
 		property_set("sys.serialno", sn_buf_idb[0] ? sn_buf_idb : "");
         	write_serialno2kernel(sn_buf_idb);
 		SLOGE("get serialno from idb,serialno = %s",sn_buf_idb);
@@ -1118,9 +1121,13 @@ int main( int argc, char *argv[] )
 	}*/
 	detect_secure_boot();
 	if ((*propbuf_source != '\0')&&( *propbuf_dest != '\0')) {
-		SLOGE("---do bootup copy from %s to %s",propbuf_source,propbuf_dest);
-		copy_dir(propbuf_source,propbuf_dest);
-		SLOGE("---done bootup copy--");
+		char prop_buf[PROPERTY_VALUE_MAX];
+		property_get("persist.sys.first_booting", prop_buf, "");
+		if(strcmp(prop_buf,"false")){//if want to only copy after recovery,open this
+			SLOGE("---do bootup copy from %s to %s",propbuf_source,propbuf_dest);
+			copy_dir(propbuf_source,propbuf_dest);
+			SLOGE("---done bootup copy--");
+		}
 	}
 
 	//read_region_tag();//add by xzj to add property ro.board.zone read from flash
